@@ -1,9 +1,7 @@
 services:
   - type: web
     name: vishnu-gita
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: cd backend && python main.py
+    runtime: docker
     envVars:
       - key: GROQ_API_KEY
         sync: false
