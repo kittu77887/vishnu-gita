@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vishnu Gita — Sacred Wisdom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-layer">
+    <div class="mandala mandala-1"></div>
+    <div class="mandala mandala-2"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-icon">
+            <span class="om-symbol">ॐ</span>
+          </div>
+          <div class="logo-text">
+            <h1>Vishnu Gita</h1>
+            <p>Sacred Wisdom · Mahabharata &amp; Bhagavad Gita</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="status-pill" id="statusPill">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Connecting...</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-divider"></div>
+    </header>
+
+    <!-- Chat Window -->
+    <main class="chat-window" id="chatWindow">
+
+      <!-- Welcome Card -->
+      <div class="welcome-card">
+        <div class="welcome-om">ॐ</div>
+        <h2>Namaste 🙏</h2>
+        <p>I am <strong>Vishnu Gita</strong>, your guide through the eternal wisdom of the Mahabharata and Bhagavad Gita. Share what weighs on your heart and I shall illuminate it with sacred teachings.</p>
+        <div class="suggested-label">Try asking:</div>
+        <div class="suggestions">
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">How do I overcome fear?</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">What is the meaning of dharma?</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">How to deal with anger?</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">What does the Gita say about grief?</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">How can I find my purpose in life?</button>
+          <button class="suggestion-chip" onclick="fillSuggestion(this)">Tell me about Karna's story</button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Scroll to bottom button -->
+    <button class="scroll-btn" id="scrollBtn" onclick="scrollToBottom()" title="Scroll to bottom">↓</button>
+
+    <!-- Sources panel -->
+    <div class="sources-bar" id="sourcesBar">
+      <span class="sources-icon">📖</span>
+      <span class="sources-label">Sources:</span>
+      <div class="sources-chips" id="sourcesList"></div>
+    </div>
+
+    <!-- Input Area -->
+    <footer class="input-area">
+      <div class="input-wrapper">
+        <div class="input-inner">
+          <textarea
+            id="inputBox"
+            placeholder="Ask for guidance from the scriptures..."
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="onInputChange()"
+          ></textarea>
+          <button id="sendBtn" onclick="sendMessage()" title="Send (Enter)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-footer">
+          <span class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

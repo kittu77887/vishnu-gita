@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+chromadb
+sentence-transformers
+groq
+langchain
+langchain-community
+datasets
+python-dotenv
+requests
