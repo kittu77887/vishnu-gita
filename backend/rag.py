@@ -1,74 +1,93 @@
 """
-Vishnu Gita - RAG Pipeline
-Retrieves relevant scripture passages and generates wise answers
+Vishnu Gita - RAG Pipeline (Lightweight TF-IDF version)
+Uses scikit-learn TF-IDF instead of sentence-transformers — fits in 512MB RAM
 """
 
 import os
-import chromadb
-from chromadb.utils import embedding_functions
+import json
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from groq import Groq
 from prompts import DIVINE_SYSTEM_PROMPT
 
-DB_DIR = os.path.join(os.path.dirname(__file__), "divine_db")
-
-# Initialize once at startup
-_client = None
-_collection = None
+# Global state
+_passages = []
+_vectorizer = None
+_matrix = None
 _groq = None
 
 
+def _load_passages():
+    """Load all scripture JSON files"""
+    passages = []
+    raw_dir = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
+    for fname in ["mahabharata.json", "bhagavad_gita.json"]:
+        fpath = os.path.join(raw_dir, fname)
+        if os.path.exists(fpath):
+            with open(fpath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            passages.extend(data)
+            print(f"  Loaded {len(data)} passages from {fname}")
+    return passages
+
+
 def init():
-    global _client, _collection, _groq
+    global _passages, _vectorizer, _matrix, _groq
 
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GROQ_API_KEY not set in .env file")
+        raise ValueError("GROQ_API_KEY not set")
 
     _groq = Groq(api_key=api_key)
 
-    if not os.path.exists(DB_DIR):
-        raise FileNotFoundError(
-            "Database not found! Run: cd data && python build_database.py"
-        )
+    print("  Loading scripture passages...")
+    _passages = _load_passages()
+    if not _passages:
+        raise FileNotFoundError("No scripture data found in data/raw/")
 
-    embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
+    print(f"  Building TF-IDF index over {len(_passages)} passages...")
+    texts = [p.get("text", "") for p in _passages]
+    _vectorizer = TfidfVectorizer(
+        stop_words="english",
+        max_features=8000,
+        ngram_range=(1, 2)
     )
-    _client = chromadb.PersistentClient(path=DB_DIR)
-    _collection = _client.get_collection("scriptures", embedding_function=embed_fn)
-    print(f"  Vishnu Gita RAG ready. {_collection.count()} passages loaded.")
+    _matrix = _vectorizer.fit_transform(texts)
+    print(f"  Vishnu Gita RAG ready. {len(_passages)} passages indexed.")
+
+
+def _search(query: str, n: int = 5):
+    """Find top-n most relevant passages for a query"""
+    q_vec = _vectorizer.transform([query])
+    scores = cosine_similarity(q_vec, _matrix)[0]
+    top_indices = np.argsort(scores)[-n:][::-1]
+    return [_passages[i] for i in top_indices if scores[i] > 0]
 
 
 def ask(question: str, chat_history: list = None) -> dict:
     """
-    Main function: takes a question, finds relevant scriptures, returns answer.
+    Main function: finds relevant scriptures, returns a simple answer.
     Returns: { "answer": str, "sources": list }
     """
-    if _collection is None:
+    if _vectorizer is None:
         init()
 
-    # 1. Find top 5 relevant scripture passages (safely)
-    n = min(5, _collection.count())
-    results = _collection.query(
-        query_texts=[question],
-        n_results=n
-    )
+    # 1. Find relevant passages
+    results = _search(question, n=5)
+    if not results:
+        results = _passages[:3]  # fallback to first 3
 
-    passages = results["documents"][0]
-    metas = results["metadatas"][0]
-
-    # 2. Build context string
+    # 2. Build context
     context = ""
     sources = []
-    for i, (text, meta) in enumerate(zip(passages, metas)):
-        label = f"{meta.get('source', '')} - {meta.get('parva', '')} {meta.get('section', '')}".strip(" -")
-        context += f"\n[{i+1}] {label}:\n{text}\n"
+    for i, p in enumerate(results):
+        label = f"{p.get('source', '')} - {p.get('parva', '')} {p.get('section', '')}".strip(" -")
+        context += f"\n[{i+1}] {label}:\n{p.get('text', '')}\n"
         sources.append(label)
 
     # 3. Build messages
     messages = [{"role": "system", "content": DIVINE_SYSTEM_PROMPT}]
-
-    # Add chat history if provided (last 4 exchanges)
     if chat_history:
         for msg in chat_history[-8:]:
             messages.append(msg)
@@ -99,11 +118,10 @@ Total reply must be under 120 words. Plain simple language only."""
 
     answer = response.choices[0].message.content.strip()
 
-    # Hard trim to ~130 words max (keeps last sentence complete)
+    # Hard trim to ~130 words max
     words = answer.split()
     if len(words) > 130:
         trimmed = ' '.join(words[:130])
-        # Find the last sentence-ending punctuation to not cut mid-sentence
         for end in ['. ', '.\n', '! ', '? ']:
             last = trimmed.rfind(end)
             if last > 60:
@@ -113,5 +131,5 @@ Total reply must be under 120 words. Plain simple language only."""
 
     return {
         "answer": answer,
-        "sources": list(set(sources))  # Deduplicated sources
+        "sources": list(dict.fromkeys(sources))  # deduplicated, order preserved
     }

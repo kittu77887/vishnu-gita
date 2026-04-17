@@ -1,10 +1,7 @@
 fastapi
-uvicorn
-chromadb
-sentence-transformers
+uvicorn[standard]
+scikit-learn
+numpy
 groq
-langchain
-langchain-community
-datasets
 python-dotenv
 requests
