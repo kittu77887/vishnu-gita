@@ -92,9 +92,10 @@ async def chat(req: ChatRequest):
 
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.environ.get("PORT", 7860))
     print("\n" + "=" * 60)
     print("  Vishnu Gita is starting...")
-    print("  Website: http://localhost:8000")
-    print("  API:     http://localhost:8000/chat")
+    print(f"  Website: http://localhost:{port}")
+    print(f"  API:     http://localhost:{port}/chat")
     print("=" * 60 + "\n")
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
